@@ -13,7 +13,7 @@ android {
     buildToolsVersion "30.0.3"
 
     defaultConfig {
-        applicationId "com.codepath.apps.restclienttemplate"
+        applicationId "com.codepath.apps.simpletweet"
         minSdkVersion 21
         targetSdkVersion 28
         versionCode 1
