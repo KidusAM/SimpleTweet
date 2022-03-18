@@ -1,11 +1,10 @@
 package com.codepath.apps.simpletweet
 
-import android.annotation.SuppressLint
 import android.content.Intent
 import android.graphics.Color
-import android.graphics.Color.red
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.preference.PreferenceManager
 import android.util.Log
 import android.widget.Button
 import android.widget.EditText
@@ -15,7 +14,6 @@ import androidx.core.widget.addTextChangedListener
 import com.codepath.apps.simpletweet.models.Tweet
 import com.codepath.asynchttpclient.callback.JsonHttpResponseHandler
 import okhttp3.Headers
-import org.w3c.dom.Text
 
 class ComposeActivity : AppCompatActivity() {
     lateinit var etCompose: EditText
@@ -32,11 +30,42 @@ class ComposeActivity : AppCompatActivity() {
         tvTweetCharCount = findViewById(R.id.tvTweetCharCount)
         client = TwitterApplication.getRestClient(this)
 
+        // if there is a saved draft, retrieve it
+        val pref = PreferenceManager.getDefaultSharedPreferences(this)
+        val draft = pref.getString(DRAFT_KEY, "")
+
+        etCompose.setText(draft)
+
         btnTweet.setOnClickListener { postTweet() }
         updateLengthCount()
         etCompose.addTextChangedListener {
             updateLengthCount()
         }
+    }
+
+    override fun onBackPressed() {
+        val fragmentManager = supportFragmentManager
+        if (etCompose.text.length == 0) {
+            // just exit out since there is nothing to save
+            super.onBackPressed()
+            return
+        }
+
+        val tweetComposeDialogFragment = TweetComposeDialogFragment.newInstance(
+            "Do you want to save your tweet as a draft?",
+            object : TweetComposeDialogFragment.OnDialogAction {
+                override fun onSubmitCallback() {
+                    updateTweetDraft(etCompose.text.toString())
+                    super@ComposeActivity.onBackPressed()
+                }
+
+                override fun onCancelCallback() {
+                    updateTweetDraft("")
+                    super@ComposeActivity.onBackPressed()
+                }
+            }
+        )
+        tweetComposeDialogFragment.show(fragmentManager, "fragment_confirm")
     }
 
     fun updateLengthCount() {
@@ -50,6 +79,14 @@ class ComposeActivity : AppCompatActivity() {
             tvTweetCharCount.setTextColor(Color.BLACK)
             btnTweet.isEnabled = true
         }
+    }
+
+
+    fun updateTweetDraft(draftText : String) {
+        val pref = PreferenceManager.getDefaultSharedPreferences(this@ComposeActivity)
+        val edit = pref.edit()
+        edit.putString(ComposeActivity.DRAFT_KEY, draftText)
+        edit.commit()
     }
 
     fun postTweet() {
@@ -92,9 +129,13 @@ class ComposeActivity : AppCompatActivity() {
             })
         }
 
+        // update the draft to be nothing so that they can start fresh on the next compose
+        updateTweetDraft("")
+
     }
     companion object {
         val TAG = "ComposeActivity"
+        val DRAFT_KEY = "tweet_draft"
         val MAX_TWEET_LENGTH = 240
     }
 }

@@ -4,7 +4,7 @@ import androidx.room.*
 
 @Dao
 interface TweetDao {
-    @Query("SELECT * FROM Tweet INNER JOIN User ON Tweet.userId = User.user_id ORDER BY Tweet.createdAt LIMIT 5")
+    @Query("SELECT * FROM Tweet INNER JOIN User ON Tweet.userId = User.user_id ORDER BY Tweet.createdAt LIMIT 25")
     fun recentItems() : List<TweetWithUser>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
