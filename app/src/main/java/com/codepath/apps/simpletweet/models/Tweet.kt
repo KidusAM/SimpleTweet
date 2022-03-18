@@ -1,13 +1,17 @@
 package com.codepath.apps.simpletweet.models
 
+import android.os.Parcelable
+import kotlinx.parcelize.Parcelize
 import org.json.JSONArray
 import org.json.JSONObject
 
-class Tweet {
-    var id : Long  = 0
-    var body: String = ""
-    var createdAt: String = ""
+@Parcelize
+class Tweet (
+    var id : Long  = 0,
+    var body: String = "",
+    var createdAt: String = "",
     var user: User? = null
+) : Parcelable {
 
     companion object {
         fun fromJson(jsonObject: JSONObject) : Tweet {

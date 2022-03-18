@@ -1,8 +1,12 @@
 package com.codepath.apps.simpletweet
 
+import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
+import android.view.Menu
+import android.view.MenuItem
+import android.widget.Toast
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
@@ -50,6 +54,34 @@ class TimelineActivity : AppCompatActivity() {
         populateHomeTimeline()
     }
 
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.menu_main, menu)
+        return true
+    }
+
+    // handles clicks on menu item
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        if (item.itemId == R.id.compose) {
+            val intent = Intent(this, ComposeActivity::class.java)
+            startActivityForResult(intent, COMPOSE_CODE)
+        }
+        return super.onOptionsItemSelected(item)
+    }
+
+    // this method is called when one of the activities that we spawned gets finished
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == COMPOSE_CODE && resultCode == RESULT_OK) {
+            if (data != null) {
+                tweets.add(0, data.getParcelableExtra("newTweet"))
+                adapter.notifyItemInserted(0)
+                rvTweets.smoothScrollToPosition(0)
+            }
+        }
+    }
+
+
+
     fun refreshHomeTimeline() {
         adapter.clear()
         populateHomeTimeline()
@@ -87,5 +119,6 @@ class TimelineActivity : AppCompatActivity() {
 
     companion object {
         val TAG = "TimelineActivity"
+        val COMPOSE_CODE = 1
     }
 }
