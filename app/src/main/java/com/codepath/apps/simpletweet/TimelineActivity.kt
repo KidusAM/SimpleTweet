@@ -1,6 +1,7 @@
 package com.codepath.apps.simpletweet
 
 import android.content.Intent
+import android.os.AsyncTask
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
@@ -11,13 +12,17 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.codepath.apps.simpletweet.models.Tweet
+import com.codepath.apps.simpletweet.models.TweetDao
+import com.codepath.apps.simpletweet.models.User
 import com.codepath.asynchttpclient.callback.JsonHttpResponseHandler
 import okhttp3.Headers
 import org.json.JSONException
 
-class TimelineActivity : AppCompatActivity() {
+class TimelineActivity() : AppCompatActivity() {
 
     lateinit var client : TwitterClient
+    lateinit var tweetDao : TweetDao
+
     lateinit var rvTweets: RecyclerView
     lateinit var swipeContainer : SwipeRefreshLayout
     lateinit var adapter: TweetsAdapter
@@ -28,6 +33,9 @@ class TimelineActivity : AppCompatActivity() {
         setContentView(R.layout.activity_timeline)
 
         client = TwitterApplication.getRestClient(this)
+        tweetDao = (applicationContext as TwitterApplication).myDatabase?.tweetDao()!!
+
+
         rvTweets = findViewById(R.id.rvTweets)
         swipeContainer = findViewById(R.id.swipeContainer)
         adapter = TweetsAdapter(tweets)
@@ -50,6 +58,12 @@ class TimelineActivity : AppCompatActivity() {
                 populateHomeTimeline()
             }
         })
+
+        // Query for existing tweets in the DB
+        AsyncTask.execute {
+            tweets.addAll(TweetDao.getTweetList(tweetDao.recentItems()))
+        }
+
 
         populateHomeTimeline()
     }
@@ -98,8 +112,14 @@ class TimelineActivity : AppCompatActivity() {
                     val oldSize = tweets.size
                     adapter.addAll(Tweet.fromJsonArray(json.jsonArray))
                     adapter.notifyDataSetChanged()
-
                     swipeContainer.isRefreshing = false
+
+                    // now insert the new tweets into the database
+                    AsyncTask.execute {
+                        // first insert the users
+                        tweetDao.insertModel(*User.fromTweetsArray(tweets).toTypedArray())
+                        tweetDao.insertModel(*tweets.toTypedArray())
+                    }
                 } catch (e : JSONException) {
                     Log.e(TAG, "Json error $e")
                 }
